@@ -15,7 +15,7 @@ const connectDB = async()=>{
     })
 }
 
-connectDB();
+connectDB(); 
 
 app.use(cors());
 app.use(express.json());
