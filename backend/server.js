@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose, { mongo } from 'mongoose';
 import userRouter from './routers/userRouter.js';
+import bookRouter from './routers/bookRouter.js';
 
 
 const app = express();
@@ -21,6 +22,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/user",userRouter);
+app.use("/api/book",bookRouter)
 
 app.get("/",(req,res)=>{
     res.send("API WORKING");
