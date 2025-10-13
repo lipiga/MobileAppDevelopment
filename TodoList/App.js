@@ -8,7 +8,8 @@ import {
   FlatList,
   Keyboard,
   Alert,
-  StatusBar
+  StatusBar,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -24,14 +25,14 @@ export default function App() {
     }
 
     if (editIndex !== -1) {
-      // Editing existing task
+      // Editing existing task - replace with new text (reset completion)
       const updatedTasks = [...tasks];
-      updatedTasks[editIndex] = task;
+      updatedTasks[editIndex] = task.trim();
       setTasks(updatedTasks);
       setEditIndex(-1);
     } else {
       // Adding new task
-      setTasks([...tasks, task]);
+      setTasks([...tasks, task.trim()]);
     }
     
     setTask('');
@@ -39,33 +40,56 @@ export default function App() {
   };
 
   const handleEditTask = (index) => {
-    setTask(tasks[index]);
+    const item = tasks[index];
+    // If item is an object (completed), load its text; otherwise it's a string
+    setTask(typeof item === 'string' ? item : item.text);
     setEditIndex(index);
   };
 
   const handleDeleteTask = (index) => {
-    Alert.alert(
-      'Delete Task',
-      'Are you sure you want to delete this task?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            const updatedTasks = tasks.filter((_, taskIndex) => taskIndex !== index);
-            setTasks(updatedTasks);
-            if (editIndex === index) {
-              setEditIndex(-1);
-              setTask('');
+    const confirmMessage = 'Are you sure you want to delete this task?';
+
+    if (Platform.OS === 'web') {
+      // window.confirm works reliably on web
+      if (window.confirm(confirmMessage)) {
+        const updatedTasks = tasks.filter((_, taskIndex) => taskIndex !== index);
+        setTasks(updatedTasks);
+        if (editIndex === index) {
+          setEditIndex(-1);
+          setTask('');
+        } else if (editIndex > index) {
+          // adjust editIndex if an earlier item was removed
+          setEditIndex(editIndex - 1);
+        }
+      }
+    } else {
+      // Native alert with buttons
+      Alert.alert(
+        'Delete Task',
+        confirmMessage,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              const updatedTasks = tasks.filter((_, taskIndex) => taskIndex !== index);
+              setTasks(updatedTasks);
+              if (editIndex === index) {
+                setEditIndex(-1);
+                setTask('');
+              } else if (editIndex > index) {
+                // adjust editIndex if an earlier item was removed
+                setEditIndex(editIndex - 1);
+              }
             }
           }
-        }
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const handleToggleComplete = (index) => {
@@ -81,7 +105,7 @@ export default function App() {
         completedAt: new Date().toLocaleString()
       };
     } else {
-      // Toggle back to incomplete
+      // Toggle back to incomplete (store as string)
       updatedTasks[index] = currentTask.text;
     }
     
@@ -99,7 +123,7 @@ export default function App() {
           style={styles.taskContent}
           onPress={() => handleToggleComplete(index)}
         >
-          <View style={styles.checkbox}>
+          <View style={[styles.checkbox, isCompleted && { backgroundColor: '#2196F3' }]}>
             {isCompleted && <Ionicons name="checkmark" size={16} color="#fff" />}
           </View>
           <View style={styles.taskTextContainer}>
